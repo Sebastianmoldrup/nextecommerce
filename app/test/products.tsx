@@ -13,9 +13,7 @@ export default function Products({ products }: { products: Product[] }) {
   const [page, setPage] = useState(0);
   /* state for category filter */
   /* TODO: use state for category */
-  const [categoriesFilter, setCategoriesFilter] = useState<Set<string>>(
-    new Set()
-  );
+  const [categoriesFilter, setCategoriesFilter] = useState<string>();
   /* filtering products */
   const productsFiltered = useMemo(() => {
     /* regex from search query */
@@ -24,22 +22,38 @@ export default function Products({ products }: { products: Product[] }) {
       'i'
     );
     setPage(0);
-    return products.filter(
-      (product) =>
-        /* TODO: add categoryFilter filter to if statement */
-        // Categoryfilter check for category then search via category
-        searchRegExp.test(product.title) ||
-        searchRegExp.test(product.category) ||
-        searchRegExp.test(product.description)
-    );
-  }, [products, search]);
+    return products.filter((product) => {
+      if (categoriesFilter) {
+        // Filter by selected category
+        if (product.category === categoriesFilter) {
+          return (
+            searchRegExp.test(product.title) ||
+            searchRegExp.test(product.description)
+          );
+        }
+        // If the product's category doesn't match the selected category, exclude it
+        return false;
+      } else {
+        // No category selected, show all products matching the search query
+        return (
+          searchRegExp.test(product.title) ||
+          searchRegExp.test(product.category) ||
+          searchRegExp.test(product.description)
+        );
+      }
+    });
+  }, [products, search, categoriesFilter]);
   /* getting unique categories */
   const categories = [...new Set(products.map((product) => product.category))];
   return (
     <div>
       <div className='grid gap-2'>
         <div>
-          <Search search={search} setSearch={setSearch} />
+          <Search
+            search={search}
+            setSearch={setSearch}
+            categories={categories}
+          />
         </div>
         <div>
           <ul className='flex gap-1 flex-wrap text-gray-800'>
@@ -62,6 +76,8 @@ export default function Products({ products }: { products: Product[] }) {
                     // setSearch(Array.from(searchValue).join(', '));
 
                     // Update category filter
+                    setCategoriesFilter(category);
+                    console.log(category);
                     search.includes(category) ? null : setSearch(category);
                   }}
                   type='button'
@@ -97,16 +113,22 @@ export default function Products({ products }: { products: Product[] }) {
 function Search({
   search,
   setSearch,
+  categories,
 }: {
   search: string;
   setSearch: (search: string) => void;
+  categories: array;
 }) {
+  console.log(categories);
+  console.log(search);
   return (
     <input
       className='text-gray-800 p-1 block mb-4 rounded-md w-full'
       placeholder='Search ...'
       type='search'
-      value={search}
+      value={
+        categories.some((category) => search.includes(category)) ? '' : search
+      }
       onChange={(e) => {
         setSearch(e.target.value);
       }}
