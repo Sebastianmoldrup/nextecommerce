@@ -1,6 +1,9 @@
 'use client';
+
 import { useState, useMemo } from 'react';
+
 import type { Product } from './page';
+
 const pageSize = 10;
 /**
  * Products list
@@ -9,11 +12,20 @@ const pageSize = 10;
 export default function Products({ products }: { products: Product[] }) {
   /* search query */
   const [search, setSearch] = useState('');
+
   /* page index */
   const [page, setPage] = useState(0);
+
   /* state for category filter */
   /* TODO: use state for category */
-  const [categoriesFilter, setCategoriesFilter] = useState<string>();
+  const [categoriesFilter, setCategoriesFilter] = useState<Set<string>>(
+    new Set()
+  );
+
+  /* getting unique categories */
+  const categories = [...new Set(products.map((product) => product.category))];
+  console.log(categoriesFilter);
+
   /* filtering products */
   const productsFiltered = useMemo(() => {
     /* regex from search query */
@@ -22,29 +34,33 @@ export default function Products({ products }: { products: Product[] }) {
       'i'
     );
     setPage(0);
+    console.log(search);
     return products.filter((product) => {
-      if (categoriesFilter) {
-        // Filter by selected category
-        if (product.category === categoriesFilter) {
-          return (
-            searchRegExp.test(product.title) ||
-            searchRegExp.test(product.description)
-          );
-        }
-        // If the product's category doesn't match the selected category, exclude it
-        return false;
-      } else {
-        // No category selected, show all products matching the search query
+      // Check category filter for products category
+      if (categoriesFilter === product.category) {
+        console.log('filtered');
+        // If category filter then check that the product has same category then either title & description
+        return (
+          product.category === categoriesFilter &&
+          (searchRegExp.test(product.title) ||
+            searchRegExp.test(product.description))
+        );
+        // Check for search state
+      } else if (search) {
+        console.log('unfiltered');
+        // if search state then check that the search value matches the title/category/description
         return (
           searchRegExp.test(product.title) ||
           searchRegExp.test(product.category) ||
           searchRegExp.test(product.description)
         );
+        // if nothing then return all products
+      } else {
+        return true;
       }
     });
   }, [products, search, categoriesFilter]);
-  /* getting unique categories */
-  const categories = [...new Set(products.map((product) => product.category))];
+
   return (
     <div>
       <div className='grid gap-2'>
@@ -57,6 +73,17 @@ export default function Products({ products }: { products: Product[] }) {
         </div>
         <div>
           <ul className='flex gap-1 flex-wrap text-gray-800'>
+            {/* Added button to show all products if locked on category */}
+            <li className={'bg-gray-200 p-1 rounded'}>
+              <button
+                className='focus:outline-none'
+                onClick={() => {
+                  setSearch('');
+                }}
+              >
+                All products
+              </button>
+            </li>
             {categories.map((category, index) => (
               <li
                 className={
@@ -69,16 +96,20 @@ export default function Products({ products }: { products: Product[] }) {
                   className='focus:outline-none'
                   onClick={() => {
                     /* TODO: redo */
+                    // VER 0.1
                     // const searchValue = new Set(search.split(/,\s*/));
                     // if (searchValue.has(category)) searchValue.delete(category);
                     // else searchValue.add(category);
                     // searchValue.delete('');
                     // setSearch(Array.from(searchValue).join(', '));
 
-                    // Update category filter
-                    setCategoriesFilter(category);
-                    console.log(category);
+                    // VER 0.2
+                    // if (search.includes(category)) return;
+                    // setSearch(category);
+
+                    // VER 0.3
                     search.includes(category) ? null : setSearch(category);
+                    setCategoriesFilter(category);
                   }}
                   type='button'
                 >
@@ -107,6 +138,7 @@ export default function Products({ products }: { products: Product[] }) {
     </div>
   );
 }
+
 /**
  * Search input
  */
@@ -117,24 +149,21 @@ function Search({
 }: {
   search: string;
   setSearch: (search: string) => void;
-  categories: array;
+  categories: Array<string>;
 }) {
-  console.log(categories);
-  console.log(search);
   return (
     <input
       className='text-gray-800 p-1 block mb-4 rounded-md w-full'
       placeholder='Search ...'
       type='search'
-      value={
-        categories.some((category) => search.includes(category)) ? '' : search
-      }
+      value={categories.includes(search) ? '' : search}
       onChange={(e) => {
         setSearch(e.target.value);
       }}
     />
   );
 }
+
 /**
  * Pagination buttons
  */
