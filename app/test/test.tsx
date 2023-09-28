@@ -1,9 +1,6 @@
 'use client';
-
 import { useState, useMemo } from 'react';
-
 import type { Product } from './page';
-
 const pageSize = 10;
 /**
  * Products list
@@ -12,22 +9,11 @@ const pageSize = 10;
 export default function Products({ products }: { products: Product[] }) {
   /* search query */
   const [search, setSearch] = useState('');
-
   /* page index */
   const [page, setPage] = useState(0);
-
   /* state for category filter */
   /* TODO: use state for category */
-  const [categoriesFilter, setCategoriesFilter] = useState<Set<string>>(
-    new Set()
-  );
-
-  /* getting unique categories */
-  const categories = [...new Set(products.map((product) => product.category))];
-  console.log('filter: ', categoriesFilter);
-  console.log('search: ', search);
-  console.log(categoriesFilter);
-
+  // const [categoriesFilter, setCategoriesFilter] = useState<Set<string>>(new Set());
   /* filtering products */
   const productsFiltered = useMemo(() => {
     /* regex from search query */
@@ -36,39 +22,24 @@ export default function Products({ products }: { products: Product[] }) {
       'i'
     );
     setPage(0);
-    return products.filter((product) => {
-      // Check category filter for products category
-      searchRegExp.test(product.title) ||
-      searchRegExp.test(product.description) ||
-      (searchRegExp.test(product.category) && categoriesFilter)
-        ? product.category === categoriesFilter
-        : null;
-    });
-  }, [products, search, categoriesFilter]);
-
+    return products.filter(
+      (product) =>
+        /* TODO: add categoryFilter filter to if statement */
+        searchRegExp.test(product.title) ||
+        searchRegExp.test(product.category) ||
+        searchRegExp.test(product.description)
+    );
+  }, [products, search]);
+  /* getting unique categories */
+  const categories = [...new Set(products.map((product) => product.category))];
   return (
     <div>
       <div className='grid gap-2'>
         <div>
-          <Search
-            search={search}
-            setSearch={setSearch}
-            categories={categories}
-          />
+          <Search search={search} setSearch={setSearch} />
         </div>
         <div>
           <ul className='flex gap-1 flex-wrap text-gray-800'>
-            {/* Added button to show all products if locked on category */}
-            <li className={'bg-gray-200 p-1 rounded'}>
-              <button
-                className='focus:outline-none'
-                onClick={() => {
-                  setSearch('');
-                }}
-              >
-                All products
-              </button>
-            </li>
             {categories.map((category, index) => (
               <li
                 className={
@@ -81,20 +52,11 @@ export default function Products({ products }: { products: Product[] }) {
                   className='focus:outline-none'
                   onClick={() => {
                     /* TODO: redo */
-                    // VER 0.1
-                    // const searchValue = new Set(search.split(/,\s*/));
-                    // if (searchValue.has(category)) searchValue.delete(category);
-                    // else searchValue.add(category);
-                    // searchValue.delete('');
-                    // setSearch(Array.from(searchValue).join(', '));
-
-                    // VER 0.2
-                    // if (search.includes(category)) return;
-                    // setSearch(category);
-
-                    // VER 0.3
-                    search.includes(category) ? null : setSearch(category);
-                    setCategoriesFilter(category);
+                    const searchValue = new Set(search.split(/,\s*/));
+                    if (searchValue.has(category)) searchValue.delete(category);
+                    else searchValue.add(category);
+                    searchValue.delete('');
+                    setSearch(Array.from(searchValue).join(', '));
                   }}
                   type='button'
                 >
@@ -123,32 +85,28 @@ export default function Products({ products }: { products: Product[] }) {
     </div>
   );
 }
-
 /**
  * Search input
  */
 function Search({
   search,
   setSearch,
-  categories,
 }: {
   search: string;
   setSearch: (search: string) => void;
-  categories: Array<string>;
 }) {
   return (
     <input
       className='text-gray-800 p-1 block mb-4 rounded-md w-full'
       placeholder='Search ...'
       type='search'
-      value={categories.includes(search) ? '' : search}
+      value={search}
       onChange={(e) => {
         setSearch(e.target.value);
       }}
     />
   );
 }
-
 /**
  * Pagination buttons
  */
