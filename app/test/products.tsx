@@ -24,8 +24,8 @@ export default function Products({ products }: { products: Product[] }) {
 
   /* getting unique categories */
   const categories = [...new Set(products.map((product) => product.category))];
-  console.log('filter: ', categoriesFilter);
-  console.log('search: ', search);
+  // console.log('filter: ', categoriesFilter);
+  // console.log('search: ', search);
   console.log(categoriesFilter);
 
   /* filtering products */
@@ -37,12 +37,22 @@ export default function Products({ products }: { products: Product[] }) {
     );
     setPage(0);
     return products.filter((product) => {
-      // Check category filter for products category
-      searchRegExp.test(product.title) ||
-      searchRegExp.test(product.description) ||
-      (searchRegExp.test(product.category) && categoriesFilter)
-        ? product.category === categoriesFilter
-        : null;
+      const filter = [...categoriesFilter];
+      if (filter.length > 0) {
+        return (
+          categoriesFilter.has(product.category) &&
+          (searchRegExp.test(product.title) ||
+            searchRegExp.test(product.description))
+        );
+      } else if (search === '') {
+        return true;
+      } else {
+        return (
+          searchRegExp.test(product.title) ||
+          searchRegExp.test(product.description) ||
+          searchRegExp.test(product.category)
+        );
+      }
     });
   }, [products, search, categoriesFilter]);
 
@@ -63,7 +73,9 @@ export default function Products({ products }: { products: Product[] }) {
               <button
                 className='focus:outline-none'
                 onClick={() => {
-                  setSearch('');
+                  const x = new Set(categoriesFilter);
+                  x.clear();
+                  setCategoriesFilter(x);
                 }}
               >
                 All products
@@ -73,7 +85,9 @@ export default function Products({ products }: { products: Product[] }) {
               <li
                 className={
                   'bg-gray-200 p-1 rounded' +
-                  (search && search.includes(category) ? ' bg-green-300' : '')
+                  (categoriesFilter.size > 0 && categoriesFilter.has(category)
+                    ? ' bg-green-300'
+                    : '')
                 }
                 key={index}
               >
@@ -81,20 +95,22 @@ export default function Products({ products }: { products: Product[] }) {
                   className='focus:outline-none'
                   onClick={() => {
                     /* TODO: redo */
-                    // VER 0.1
-                    // const searchValue = new Set(search.split(/,\s*/));
-                    // if (searchValue.has(category)) searchValue.delete(category);
-                    // else searchValue.add(category);
-                    // searchValue.delete('');
-                    // setSearch(Array.from(searchValue).join(', '));
 
-                    // VER 0.2
-                    // if (search.includes(category)) return;
-                    // setSearch(category);
-
-                    // VER 0.3
-                    search.includes(category) ? null : setSearch(category);
-                    setCategoriesFilter(category);
+                    // search.includes(category) ? null : setSearch(category);
+                    // const setFilter = new Set(categoriesFilter);
+                    // categoriesFilter.has(category)
+                    //   ? setFilter.delete(category)
+                    //   : setFilter.add(category);
+                    // setCategoriesFilter(setFilter);
+                    setCategoriesFilter((x) => {
+                      const setFilter = new Set(x);
+                      if (x.has(category)) {
+                        setFilter.delete(category);
+                      } else {
+                        setFilter.add(category);
+                      }
+                      return setFilter;
+                    });
                   }}
                   type='button'
                 >
